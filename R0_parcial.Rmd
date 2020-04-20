@@ -1,0 +1,169 @@
+---
+title: "Calculo de Ro"
+output:
+  html_document:
+    df_print: paged
+---
+
+##Actividad inciso a
+
+#Calculamos el $R_0$ por el método de la pendiente.
+
+
+```{r setup, include=FALSE, results=FALSE}
+#Instalar las librerias necesarias y cargarlas
+instalar <- function(paquete) {
+    if (!require(paquete,character.only = TRUE,
+                 quietly = TRUE, 
+                 warn.conflicts = FALSE)){
+          install.packages(as.character(paquete),
+                           dependecies = TRUE,
+                           repos = "http://cran.us.r-project.org")
+          library(paquete,
+                  character.only = TRUE, 
+                  quietly = TRUE,
+                  warn.conflicts = FALSE)
+    }
+}
+libs <- c( 'readr', 'R0') 
+lapply(libs, instalar)
+```
+
+
+
+Cargamos los datos relacionados al brote de covid-19 en ____
+```{r}
+data<-read.csv("prueba.csv", header=TRUE)
+names(data)<-c("dia","acumulado","individual")
+head(data)
+```
+
+Graficamos los casos
+
+```{r}
+plot(acumulado~dia,data,type='b',bty='l',
+      main='Brote de Covid-19 en ___',
+      xlab='día',ylab='Casos de Covid-19')
+plot(log(acumulado)~dia,data,type='b',log='y',bty='l',main='Gráfica semilog de datos acumulados de brote de covid-19 en ___',
+      xlab='día',ylab='Casos de Covid-19')
+```
+
+Calculamos una regreción lineal con el logaritmo de los datos acumulados y el día del brote, para los primeros 5 días : %NO SÉ SI SERÍA PARA 5 DÍAS
+
+```{r}
+fit <- lm(log(acumulado)~dia,data=subset(data,dia<=5))
+summary(fit)
+```
+
+Observamos los coeficientes de la regresión y definimos utilizamos el coeficiente de la variable día para definir la pendiente:
+
+```{r}
+coef(fit)
+slope <- coef(fit)[2]
+slope
+```
+Notar que aquí el p-value es significativo
+
+Calculemos $R_0$ a pata, sabemos que $m=(R_0-1)(\mu+\gamma)$: %NO ESTOS SEGURO QUE LA GAMMA ESTÉ BIEN, PREGUNTEMOSLE A HECTOR
+```{r}
+gamma<-0.2 #1/gamma es el tiempo promedio de infección que para el covid-19 es 3.95 días
+m<-slope
+mu<-1/(70*365) #1/mu es el tiempo promedio de vida
+r0<-m/(mu+gamma)+1
+r0
+```
+
+Ahora queremos calcular el error estándar de la pendiente:
+
+```{r}
+slope.se<-coef(summary(fit))[2,2]
+slope.se
+err<-2.5*slope.se
+```
+Ahora calculamos un intervalo de confianza para $R_0$:
+```{r}
+(inf<-r0-err)
+(sup<-r0+err)
+```
+
+Queremos determinar el "mejor" $R_0$, no solo uno en general, entonces probamos para tosos los días:
+
+```{r}
+days<-2:31
+slope<-numeric(length=length(days))
+slope.se<-numeric(length=length(days))
+for (k in seq_along(days)){
+  fit<-lm(log(acumulado)~dia, data=subset(data, dia<=days[k]))
+  slope[k]<-coef(summary(fit))[2,1]
+  slope.se[k]<-coef(summary(fit))[2,2]
+  R0.hat<-slope*2.5+1
+  R0.se<-slope.se*2.5
+}
+ plot(slope~days,type="o")
+ plot(slope.se~days,type="o")
+```
+ %ME FALTA REVISAR LA TEORÍA PARA EXPLICAR QUÉ ESTÁ PASANDO
+
+```{r}
+plot(range(days), 
+     range(c(R0.hat-2*R0.se,R0.hat+2*R0.se),na.rm=T), 
+     type='n',bty='l',
+     xlab="length of initial phase (da)",
+     ylab= expression("estimated" ~ R[0])
+)
+     lines(R0.hat~days, type='o',lwd=2)
+     lines(R0.hat+2*R0.se~days,type='l')
+     lines(R0.hat-2*R0.se~days,type='l')
+```
+%TAMBIÉN FALTA EXPLICAR LA TEORÍA
+
+Resumen del resultado por el método de la pendiente:
+
+
+```{r}
+#Con el calculo sencillo obtuvimos 
+(r0)
+```
+```{r}
+#Probando con cada día vimos que graficamente se muestra que el óptimo es: 
+
+#VA A DEPENDER DE LOS DATOS
+```
+
+
+#Calculamos el $R_0$ con la paquetría de R.
+
+Ya se tiene la librería cargada, tenemos que crear el vector de casos por día:
+
+```{r}
+epid=data$individual
+```
+
+Según investigaciones previas de epidemiologos, el brote de covid-19 se puede modelas con una distribución Weibull, sabemos que el tiempo promedio de infección es de 3.95 días y tenemos datos para cada día:
+
+```{r}
+GT.covid<-generation.time("weibull",c(3.95,1))
+```
+
+Realizamos el analisis de sensibilidad:
+
+
+```{r}
+sensitivity.analysis(epid, GT.covid, begin=1,end=31, est.method="EG", sa.type="time")
+```
+
+Estimamos $R_0$ con los datos de incidencia usando el método con crecimiento exponencial:
+
+```{r}
+res.R<-estimate.R(epid,GT=GT.covid,methods=c("EG"))
+(EG<-est.R0.EG(epid,GT.covid,begin=1,end=31,nsim=1000))
+plotfit(res.R)
+```
+
+
+
+
+
+
+
+
