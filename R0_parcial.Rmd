@@ -69,13 +69,15 @@ for (k in seq_along(Dias)){
 plot(range(Dias), 
      range(c(R0.hat-2*R0.se,R0.hat+2*R0.se),na.rm=T), 
      type='n',bty='l',
-     xlab="longitud inicial de la fase",
+     xlab="día",
      ylab= expression("estimado" ~ R[0])
 )
      lines(R0.hat~Dias, type='o',lwd=2)
      lines(R0.hat+2*R0.se~Dias,type='l')
      lines(R0.hat-2*R0.se~Dias,type='l')
 ```
+
+Con el punto en dónde la banda de confianza se minimiza se elige la d de la linea 85.
 
 Calculamos una regreción lineal con el logaritmo de los datos individuales y el día del brote, para los primeros __ días, pues a partir de estos el comportamiento es de crecimiento exponencial : 
 
