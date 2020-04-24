@@ -44,7 +44,7 @@ Graficamos los casos
 plot(individual~dia,data,type='b',bty='l',
       main='Brote de Covid-19 en ___',
       xlab='día',ylab='Casos de Covid-19')
-plot(log(individual)~dia,data,type='b',log='y',bty='l',main='Gráfica semilog de datos acumulados de brote de covid-19 en ___',
+plot(log(individual)~dia,data,type='b',log='y',bty='l',main='Gráfica semilog de datos individuales de brote de covid-19 en ___',
       xlab='día',ylab='Casos de Covid-19')
 ```
 
@@ -54,7 +54,7 @@ Dias<-2:30
 pendiente<-numeric(length=length(Dias))
 pendiente.se<-numeric(length=length(Dias))
 for (k in seq_along(Dias)){
-  fit<-lm(log(acumulado)~dia, data=subset(data, dia<=Dias[k]))
+  fit<-lm(log(individual)~dia, data=subset(data, dia<=Dias[k]))
   pendiente[k]<-coef(summary(fit))[2,1]
   pendiente.se[k]<-coef(summary(fit))[2,2]
   R0.hat<-pendiente*2.5+1
@@ -77,7 +77,7 @@ plot(range(Dias),
      lines(R0.hat-2*R0.se~Dias,type='l')
 ```
 
-Calculamos una regreción lineal con el logaritmo de los datos acumulados y el día del brote, para los primeros __ días, pues a partir de estos el comportamiento es de crecimiento exponencial : 
+Calculamos una regreción lineal con el logaritmo de los datos individuales y el día del brote, para los primeros __ días, pues a partir de estos el comportamiento es de crecimiento exponencial : 
 
 ```{r}
 d<-11 #días a tomar
