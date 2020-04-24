@@ -33,7 +33,7 @@ lapply(libs, instalar)
 
 Cargamos los datos relacionados al brote de covid-19 en ____
 ```{r}
-data<-read.csv("prueba.csv", header=TRUE)
+data<-read.csv("prueba.csv", header=TRUE) #poner el nombre de su archivo
 names(data)<-c("dia","acumulado","individual")
 head(data)
 ```
@@ -41,18 +41,47 @@ head(data)
 Graficamos los casos
 
 ```{r}
-plot(acumulado~dia,data,type='b',bty='l',
+plot(individual~dia,data,type='b',bty='l',
       main='Brote de Covid-19 en ___',
       xlab='día',ylab='Casos de Covid-19')
-plot(log(acumulado)~dia,data,type='b',log='y',bty='l',main='Gráfica semilog de datos acumulados de brote de covid-19 en ___',
+plot(log(individual)~dia,data,type='b',log='y',bty='l',main='Gráfica semilog de datos acumulados de brote de covid-19 en ___',
       xlab='día',ylab='Casos de Covid-19')
+```
+
+
+```{r}
+Dias<-2:30
+pendiente<-numeric(length=length(Dias))
+pendiente.se<-numeric(length=length(Dias))
+for (k in seq_along(Dias)){
+  fit<-lm(log(acumulado)~dia, data=subset(data, dia<=Dias[k]))
+  pendiente[k]<-coef(summary(fit))[2,1]
+  pendiente.se[k]<-coef(summary(fit))[2,2]
+  R0.hat<-pendiente*2.5+1
+  R0.se<-pendiente.se*2.5
+}
+ plot(pendiente~Dias,type="o")
+ plot(pendiente.se~Dias,type="o")
+```
+
+
+```{r}
+plot(range(Dias), 
+     range(c(R0.hat-2*R0.se,R0.hat+2*R0.se),na.rm=T), 
+     type='n',bty='l',
+     xlab="longitud inicial de la fase",
+     ylab= expression("estimado" ~ R[0])
+)
+     lines(R0.hat~Dias, type='o',lwd=2)
+     lines(R0.hat+2*R0.se~Dias,type='l')
+     lines(R0.hat-2*R0.se~Dias,type='l')
 ```
 
 Calculamos una regreción lineal con el logaritmo de los datos acumulados y el día del brote, para los primeros __ días, pues a partir de estos el comportamiento es de crecimiento exponencial : 
 
 ```{r}
-d<-15
-fit <- lm(log(acumulado)~dia,data=subset(data,dia<=d))
+d<-11 #días a tomar
+fit <- lm(log(individual)~dia,data=subset(data,dia<=d))
 summary(fit)
 ```
 
@@ -67,7 +96,7 @@ Notar que aquí el p-value es significativo con un $\alpha=0.05$
 
 Calculemos $R_0$ a sin ayuda de paquetes ni loops, sabemos que $m=(R_0-1)(\mu+\gamma)$: 
 ```{r}
-gamma<-1/3.95 #1/gamma es el tiempo promedio de infección que para el covid-19 es 3.95 días
+gamma<-1/5.1 #1/gamma es el tiempo promedio de infección que para el covid-19 es 5.1 días
 m<-pendiente
 mu<-1/(70*365) #1/mu es el tiempo promedio de vida
 r0<-m/(mu+gamma)+1
@@ -90,41 +119,6 @@ Ahora calculamos un intervalo de confianza para $R_0$:
 Así, se tiene que $R_0= _____$ y el intervalo de confianza es $[_____ , _____]$
 
 
-Ahora, queremos determinar el "mejor" $R_0$, no solo uno en general, entonces probamos para todos los días:
-
-```{r}
-Dias<-2:30
-pendiente<-numeric(length=length(Dias))
-pendiente.se<-numeric(length=length(Dias))
-for (k in seq_along(Dias)){
-  fit<-lm(log(acumulado)~dia, data=subset(data, dia<=Dias[k]))
-  pendiente[k]<-coef(summary(fit))[2,1]
-  pendiente.se[k]<-coef(summary(fit))[2,2]
-  R0.hat<-pendiente*2.5+1
-  R0.se<-pendiente.se*2.5
-}
- plot(pendiente~Dias,type="o")
- plot(pendiente.se~Dias,type="o")
-```
-La primera gráfica muestra el tamaño de la pendiente dependiendo del día de la epidemia; mientras que, la segunda presenta el tamaño del error estándar en cada día. FALTA TEORÍA
-
-```{r}
-plot(range(Dias), 
-     range(c(R0.hat-2*R0.se,R0.hat+2*R0.se),na.rm=T), 
-     type='n',bty='l',
-     xlab="longitud inicial de la fase",
-     ylab= expression("estimado" ~ R[0])
-)
-     lines(R0.hat~Dias, type='o',lwd=2)
-     lines(R0.hat+2*R0.se~Dias,type='l')
-     lines(R0.hat-2*R0.se~Dias,type='l')
-```
-La gráfica anterior muestra el $R_0$ calculado para cada día analizado rodeado por una banda de confianza. Notemos que el error se minimiza cuando el $R_0$ está alrededor de ____.
-
-Resumen del resultado por el método de la pendiente:
-
-
-
 #Calculamos el $R_0$ con la paquetría de R.
 
 Ya se tiene la librería cargada, tenemos que crear el vector de casos por día:
@@ -143,14 +137,14 @@ Realizamos el analisis de sensibilidad:
 
 
 ```{r}
-sensitivity.analysis(epid, GT.covid, begin=1,end=31, est.method="EG", sa.type="time")
+sensitivity.analysis(epid, GT.covid, begin=1,end=31, est.method="EG", sa.type="time") #poner en end los días totales que tienes de datos
 ```
 
 Estimamos $R_0$ con los datos de incidencia usando el método con crecimiento exponencial:
 
 ```{r}
 res.R<-estimate.R(epid,GT=GT.covid,methods=c("EG"))
-(EG<-est.R0.EG(epid,GT.covid,begin=1,end=31,nsim=1000))
+(EG<-est.R0.EG(epid,GT.covid,begin=1,end=31,nsim=1000))#poner en end los días totales que tienes de datos
 plotfit(res.R)
 ```
 
